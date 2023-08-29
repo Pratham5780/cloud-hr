@@ -10,7 +10,6 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data
 app.use(express.json()); // Parse JSON data
 const nodemailer = require('nodemailer');
-const puppeteer = require('puppeteer');
 const uri = "mongodb+srv://khandelwalg578:37msOV8muzJQskOt@cluster0.kkkhy.mongodb.net/?retryWrites=true&w=majority";
 
 
@@ -101,56 +100,67 @@ app.post('/send-offer-letter', async (req, res) => {
   const recipientEmail = req.body.email;
 
   try {
+    // Fetch necessary data for the PDF content
     const application = await JobApplication.findOne({ email: recipientEmail });
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
     }
-
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
 
     // Render the EJS template with dynamic values
     const ejsTemplate = fs.readFileSync('./views/index2.ejs', 'utf-8');
     const renderedHtml = ejs.render(ejsTemplate, {
       internName: application.name,
       internRole: application.position,
+      // ... other dynamic data
     });
 
-    await page.setContent(renderedHtml);
-
     // Generate PDF from rendered HTML
-    const pdfBuffer = await page.pdf({ format: 'A4' });
-
-    await browser.close();
-
-    const mailOptions = {
-      from: 'hr.intern@digigrow.in',
-      to: recipientEmail,
-      subject: 'Congratulations! You have been selected',
-      text: `Hi ${application.name},\n\nCongratulations on getting selected for ${application.position} Internship!`,
-      attachments: [
-        {
-          filename: 'OfferLetter.pdf',
-          content: pdfBuffer,
-        },
-      ],
-    };
-
-    // Send the email
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error(error);
-        res.status(500).json({ error: 'An error occurred while sending the email' });
-      } else {
-        console.log('Email sent:', info.response);
-        res.status(200).json({ message: 'Offer letter sent successfully' });
+    const pdfOptions = { format: 'Letter' };
+    pdf.create(renderedHtml, pdfOptions).toBuffer(async (err, pdfBuffer) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Error generating PDF' });
       }
+
+      // Setup nodemailer transport
+      const transporter = nodemailer.createTransport({
+        service: 'Gmail',
+        auth: {
+          user: 'khandelwalg578@gmail.com',
+      pass: 'kxcelkcylgijpste',
+        },
+      });
+
+      const mailOptions = {
+        from: 'your_email@gmail.com', // Sender's email
+        to: recipientEmail, // Recipient's email
+        subject: 'Offer Letter',
+        text: `Hi ${application.name},\n\nPlease find attached your offer letter.`,
+        attachments: [
+          {
+            filename: 'offer_letter.pdf',
+            content: pdfBuffer,
+          },
+        ],
+      };
+
+      // Send the email
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error(error);
+          return res.status(500).json({ error: 'Error sending email' });
+        } else {
+          console.log('Email sent:', info.response);
+          return res.status(200).json({ message: 'Offer letter sent successfully' });
+        }
+      });
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'An error occurred' });
+    return res.status(500).json({ error: 'An error occurred' });
   }
 });
+
 
 
 app.get('/view-offer-letter/:id', async (req, res) => {
