@@ -97,10 +97,17 @@ app.get('/display', async (req, res) => {
 const pdf = require('html-pdf'); // Require the html-pdf library
 
 app.post('/send-offer-letter', async (req, res) => {
-  const recipientEmail = req.body.email;
-
   try {
-    // Fetch necessary data for the PDF content
+    const recipientEmail = req.body.email;
+
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail', // Use your email service provider here
+      auth: {
+        user: 'khandelwalg578@gmail.com',
+      pass: 'kxcelkcylgijpste', // Your email password
+      },
+    });
+
     const application = await JobApplication.findOne({ email: recipientEmail });
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
@@ -111,57 +118,49 @@ app.post('/send-offer-letter', async (req, res) => {
     const renderedHtml = ejs.render(ejsTemplate, {
       internName: application.name,
       internRole: application.position,
-      // ... other dynamic data
     });
 
     // Generate PDF from rendered HTML
-    const pdfOptions = { format: 'Letter' };
-    pdf.create(renderedHtml, pdfOptions).toBuffer(async (err, pdfBuffer) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: 'Error generating PDF' });
-      }
-
-      // Setup nodemailer transport
-      const transporter = nodemailer.createTransport({
-        service: 'Gmail',
-        auth: {
-          user: 'khandelwalg578@gmail.com',
-      pass: 'kxcelkcylgijpste',
-        },
-      });
-
-      const mailOptions = {
-        from: 'your_email@gmail.com', // Sender's email
-        to: recipientEmail, // Recipient's email
-        subject: 'Offer Letter',
-        text: `Hi ${application.name},\n\nPlease find attached your offer letter.`,
-        attachments: [
-          {
-            filename: 'offer_letter.pdf',
-            content: pdfBuffer,
-          },
-        ],
-      };
-
-      // Send the email
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error(error);
-          return res.status(500).json({ error: 'Error sending email' });
+    const pdfOptions = { format: 'A4' };
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      pdf.create(renderedHtml, pdfOptions).toBuffer((err, buffer) => {
+        if (err) {
+          reject(err);
         } else {
-          console.log('Email sent:', info.response);
-          return res.status(200).json({ message: 'Offer letter sent successfully' });
+          resolve(buffer);
         }
       });
     });
+
+    const mailOptions = {
+      from: 'your_email@example.com',
+      to: recipientEmail,
+      subject: 'Offer Letter',
+      text: 'Congratulations! Here is your offer letter.',
+      attachments: [
+        {
+          filename: 'OfferLetter.pdf',
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    };
+
+    // Send the email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while sending the email' });
+      } else {
+        console.log('Email sent:', info.response);
+        res.status(200).json({ message: 'Offer letter sent successfully' });
+      }
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'An error occurred' });
+    res.status(500).json({ error: 'An error occurred' });
   }
 });
-
-
 
 app.get('/view-offer-letter/:id', async (req, res) => {
   try {
