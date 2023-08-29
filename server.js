@@ -85,14 +85,6 @@ app.get('/display', async (req, res) => {
 
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, 'views'));
-
-  const transporter = nodemailer.createTransport({
-    service: 'Gmail',
-    auth: {
-      user: 'khandelwalg578@gmail.com',
-      pass: 'kxcelkcylgijpste',
-    },
-  });
 //SENDING OFFER LETTER
 const pdf = require('html-pdf'); // Require the html-pdf library
 
