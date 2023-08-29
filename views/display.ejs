@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Data</title>
+    <style>
+        body {
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            font-size: 15px;
+
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 80%;
+            margin-bottom: 100px;
+            border-spacing: 0;
+            border-collapse: separate;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 1px 2px 3px 4px rgba(80, 80, 80, 0.2);
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        tr:hover {
+            background-color: #e0e0e0;
+        }
+
+        .send-offer-button,
+        .view-offer-button {
+            background-color: #005cb9;
+            border-radius: 5px;
+            border: 1px solid #005cb9;
+            color: white;
+            cursor: pointer;
+            font-size: 10px;
+            transition: 0.3s;
+            padding: 5px 10px;
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        }
+
+        .send-offer-button:hover {
+            background-color: white;
+            color: black;
+        }
+
+        .view-offer-button:hover {
+            background-color: white;
+            color: black;
+        }
+
+        #offer-letter-container {
+            width: 35%;
+            border: 2px solid black;
+            margin-top: 20px;
+        }
+
+        .edit-form {
+            display: block;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .email,
+        .name {
+            color: #005cb9;
+            font-weight: bold;
+        }
+
+        .date {
+            padding-right: 75px;
+            padding: 10px;
+        }
+
+        .btn {
+            padding-right: 70px;
+        }
+    </style>
+</head>
+
+<body>
+    <img src="/logo.png" alt="Logo" style="width: 250px">
+    <h2>HR Portal</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Name</th>
+                <th class="date">Date</th>
+                <th>Position</th>
+                <th>Address</th>
+                <th>Contact</th>
+                <th class="date">Joining</th>
+                <th class="date">Ending</th>
+                <th>Duration</th>
+                <th class="btn">View Letter</th>
+                <th class="btn">Offer Letter</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% for (let i=0; i < applications.length; i++) { %>
+                <tr>
+                    <td class="email">
+                        <%= applications[i].email %>
+                    </td>
+                    <td class="name">
+                        <%= applications[i].name %>
+                    </td>
+                    <td>
+                        <%= applications[i].date.toISOString().substring(0, 10) %>
+                    </td>
+                    <td>
+                        <%= applications[i].position %>
+                    </td>
+                    <td>
+                        <%= applications[i].address %>
+                    </td>
+                    <td>
+                        <%= applications[i].contact %>
+                    </td>
+                    <td>
+                        <%= applications[i].joining.toISOString().substring(0, 10) %>
+                    </td>
+                    <td>
+                        <% if (applications[i].ending) { %>
+                            <%= applications[i].ending.toISOString().substring(0, 10) %>
+                                <% } else { %>
+                                    N/A
+                                    <% } %>
+                    </td>
+                    <td>
+                        <%= applications[i].duration %>
+                    </td>
+                    <td>
+                        <button class="view-offer-button" data-id="<%= applications[i]._id %>">View Offer
+                            Letter</button>
+                    </td>
+                    <td>
+                        <button class="send-offer-button" data-email="<%= applications[i].email %>">Send Offer
+                            Letter</button>
+                    </td>
+                </tr>
+                <% } %>
+        </tbody>
+    </table>
+    <div id="offer-letter-container" style="display: none;"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const viewOfferButtons = document.querySelectorAll('.view-offer-button');
+            const offerLetterContainer = document.getElementById('offer-letter-container');
+            const sendOfferButtons = document.querySelectorAll('.send-offer-button');
+            const editButtons = document.querySelectorAll('.edit-offer-button');
+            const editForms = document.querySelectorAll('.edit-form');
+            const editFormVisibility = new Array(editForms.length).fill(false);
+
+
+            viewOfferButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    const applicationId = button.getAttribute('data-id');
+                    const response = await fetch(`/view-offer-letter/${applicationId}`);
+                    const pdfContent = await response.text();
+                    offerLetterContainer.innerHTML = pdfContent;
+                    offerLetterContainer.style.display = 'block';
+                });
+            });
+
+            sendOfferButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    const recipientEmail = button.getAttribute('data-email');
+                    try {
+                        const response = await fetch('/send-offer-letter', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email: recipientEmail }),
+                        });
+                        const responseData = await response.json();
+                        if (responseData.message === 'Offer letter sent successfully') {
+                            alert('Offer letter sent successfully');
+                        } else {
+                            alert('Failed to send offer letter');
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        alert('An error occurred');
+                    }
+                });
+            });
+        });
+
+    </script>
+
+</body>
+
+</html>

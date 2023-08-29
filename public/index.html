@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            width: 400px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #0056b3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-container">
+        <h2>Job Application Form</h2>
+        <form action="/submit" method="post" id="application-form">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="date">Today's Date:</label>
+            <input type="date" id="date" name="date" required>
+
+            <label for="position">Position Hired:</label>
+            <select id="position" name="position" required onchange="handlePositionChange(this)">
+                <option value="" disabled selected>Select a position</option>
+                <option value="Content Writing">Content Writing</option>
+                <option value="Social Media Marketing">Social Media Marketing</option>
+                <option value="Education Consultant">Education Consultant</option>
+                <option value="Graphic Designing">Graphic Designing</option>
+                <option value="Business Development">Business Development</option>
+                <option value="Human Resources">Human Resources</option>
+                <option value="Finance">Finance</option>
+                <option value="Campus Ambassador">Campus Ambassador</option>
+                <option value="Sales Exclusive">Sales Exclusive</option>
+                <option value="Media and PR">Media and PR</option>
+                <option value="Business Research">Business Research</option>
+                <option value="Sales and Marketing">Sales and Marketing</option>
+                <option value="Android">Android</option>
+                <option value="UI/UX">UI/UX</option>
+                <option value="Web Development">Web Development</option>
+                <option value="Other">Other</option>
+            </select>
+            <div id="customPositionField" style="display: none;">
+                <label for="customPosition">Custom Position:</label>
+                <input type="text" id="customPosition" name="customPosition" placeholder="Please add a position">
+            </div>
+
+            <label for="address">Permanent Address:</label>
+            <input type="text" id="address" name="address" required
+                placeholder="Mention your City with Pincode Clearly.">
+
+            <label for="contact">Contact Number:</label>
+            <input type="tel" id="contact" name="contact" required
+                placeholder="Please mention your correct Contact number.">
+
+            <label for="joining">Joining Date:</label>
+            <input type="date" id="joining" name="joining" required>
+
+            <label for="ending">Ending Date:</label>
+            <input type="date" id="ending" name="ending" required>
+
+            <label for="duration">Duration of Internship:</label>
+            <select id="duration" name="duration" required>
+                <option value="" disabled selected>Select duration</option>
+                <option value="1 Month">1 Month</option>
+                <option value="2 Month">2 Months</option>
+                <option value="3 Month">3 Months</option>
+            </select>
+            <button type="submit">Submit</button>
+        </form>
+        <a href="/display">View Application Data</a>
+
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('application-form');
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const formData = new FormData(form);
+                const formObject = {}; // Define formObject
+
+                formData.forEach((value, key) => {
+                    formObject[key] = value;
+                });
+
+                fetch('/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formObject), // Use the constructed object
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        form.reset();
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        alert('An error occurred');
+                    });
+            });
+        });
+        function handlePositionChange(selectElement) {
+            const customPositionField = document.getElementById('customPositionField');
+            const customPositionInput = document.getElementById('customPosition');
+
+            if (selectElement.value === 'Other') {
+                customPositionField.style.display = 'block';
+                customPositionInput.setAttribute('required', 'required');
+            } else {
+                customPositionField.style.display = 'none';
+                customPositionInput.removeAttribute('required');
+            }
+        }
+
+    </script>
+</body>
+
+</html>
